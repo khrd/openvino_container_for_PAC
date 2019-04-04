@@ -1,0 +1,95 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openvino-job
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 1 # OneShotTask
+  template:
+    spec:
+      containers:
+      - name: openvino-fpga
+        image: openvino_fpga:1.2
+        command: ["/root/run.sh"]
+        args: [""]
+        env:
+        - name: LD_LIBRARY_PATH
+          value: "/opt/intel/computer_vision_sdk_2018.4.420/deployment_tools/inference_engine/external/mkltiny_lnx/lib:/opt/intel/computer_vision_sdk_2018.4.420/deployment_tools/inference_engine/external/omp/lib:/opt/intel/computer_vision_sdk_2018.4.420/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64/:/opt/intel/computer_vision_sdk_2018.4.420/deployment_tools/model_optimizer/bin:/opt/intel/computer_vision_sdk_2018.4.420/openvx/lib:/home/user/inteldevstack/a10_gx_pac_ias_1_1_pv/opencl/opencl_bsp/linux64/lib:/home/user/inteldevstack/intelFPGA_pro/hld/host/linux64/lib:/opt/intel/intelFPGA_pro/hld/linux64/lib/:/opt/a10_gx_pac_ias_1_1_pv/opencl/opencl_bsp/linux64/lib:/opt/intel/fpga-sw/opae/lib/:/opt/intel/fpga-sw/opencl/opencl_bsp/linux64/lib/:/opt/intel/intelFPGA_pro/hld/host/linux64/lib/:$LD_LIBRARY_PATH:"
+        - name: ARCH_ROOT_DIR
+          value: "/opt/intel/computer_vision_sdk_2018.4.420/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64/arch_descriptions"
+        - name: InferenceEngine_DIR
+          value: "/opt/intel/computer_vision_sdk_2018.4.420/deployment_tools/inference_engine/share"
+        - name: OpenCV_DIR
+          value: "/opt/intel/computer_vision_sdk_2018.4.420/opencv/cmake"
+        - name: PYTHONPATH
+          value: "/opt/intel/computer_vision_sdk_2018.4.420/python/python3.6:/opt/intel/computer_vision_sdk_2018.4.420/python/python3.6/ubuntu_16:/opt/intel/computer_vision_sdk_2018.4.420/deployment_tools/model_optimizer:"
+        - name: INTEL_CVSDK_DIR
+          value: "/opt/intel/computer_vision_sdk_2018.4.420"
+        - name: DLA_AOCX
+          value: "/opt/intel/computer_vision_sdk/bitstreams/a10_dcp_bitstreams/4-0_RC_FP11_SqueezeNet.aocx"
+        - name: AOCL_BOARD_PACKAGE_ROOT
+          value: "/opt/a10_gx_pac_ias_1_1_pv/opencl/opencl_bsp"
+
+        securityContext:
+          capabilities:
+            add:
+              [IPC_LOCK]
+        resources:
+          limits:
+            fpga.intel.com/arria10: 1
+            cpu: 1
+            hugepages-2Mi: 20Mi
+        volumeMounts:
+        - name: a10gxpacias11pv
+          mountPath: /opt/a10_gx_pac_ias_1_1_pv/
+        - name: bsplib
+          mountPath: /home/user/inteldevstack/a10_gx_pac_ias_1_1_pv/opencl/opencl_bsp/linux64/lib/
+        - name: a10dcpbitstreams
+          mountPath: /opt/intel/computer_vision_sdk/bitstreams/a10_dcp_bitstreams/
+        - name: fpgasw
+          mountPath: /opt/intel/fpga-sw/
+        - name: intelfpgapro
+          mountPath: /opt/intel/intelFPGA_pro
+        - name: optaltera
+          mountPath: /opt/altera
+        - name: etcopencl
+          mountPath: /etc/OpenCL/vendors
+        - name: optintelopencl
+          mountPath: /opt/Intel/OpenCL/Boards
+
+      volumes:
+      - name: a10gxpacias11pv
+        hostPath:
+          path: /home/user/inteldevstack/a10_gx_pac_ias_1_1_pv/
+          type: DirectoryOrCreate
+      - name: bsplib
+        hostPath:
+          path: /home/user/inteldevstack/a10_gx_pac_ias_1_1_pv/opencl/opencl_bsp/linux64/lib/
+          type: DirectoryOrCreate
+      - name: a10dcpbitstreams
+        hostPath:
+          path: /opt/intel/computer_vision_sdk/bitstreams/a10_dcp_bitstreams/
+          type: DirectoryOrCreate
+      - name: fpgasw
+        hostPath:
+          path: /opt/intel/fpga-sw/
+          type: DirectoryOrCreate
+      - name: intelfpgapro
+        hostPath:
+          path: /home/user/inteldevstack/intelFPGA_pro
+          type: DirectoryOrCreate
+      - name: optaltera
+        hostPath:
+          path: /opt/altera
+          type: DirectoryOrCreate
+      - name: etcopencl
+        hostPath:
+          path: /etc/OpenCL/vendors
+          type: DirectoryOrCreate
+      - name: optintelopencl
+        hostPath:
+          path: /opt/Intel/OpenCL/Boards
+          type: DirectoryOrCreate
+
+      restartPolicy: Never
